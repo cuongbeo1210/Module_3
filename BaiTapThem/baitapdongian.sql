@@ -172,15 +172,15 @@ where mathang.macongty = nhacungcap.macongty;
 select nhanvien.ho, nhanvien.ten , (nhanvien.luongcoban+nhanvien.phucap) as 'Tiền Lương' from nhanvien;
 
 -- 5.	Tăng lương lên gấp rưỡi cho những nhân viên bán được số lượng hàng nhiều hơn 100 trong năm 2021.
-update nhanvien set luongcoban=luongcoban*1.5
-where manhanvien= (select manhanvien from dondathang
-inner join chitietdathang on dondathang.sohoadon = chitietdathang.sohoadon
-where manhanvien=nhanvien.manhanvien
-group by manhanvien
-having sum(soluong)>100 and year(ngaygiaohang)=2021);
+select nv.ho, nv.ten, sum(c.soLuong) as tongSoLuong, (luongcoban*1.5) as tangLuong from DONDATHANG d
+join NHANVIEN nv on nv.manhanvien = d.manhanvien
+join CHITIETDATHANG c on d.sohoadon = c.sohoadon
+WHERE YEAR(d.ngaydathang) = 2022
+GROUP BY nv.manhanvien
+HAVING tongSoLuong > 30;
 
 -- 6.	Trong năm 2022 những mặt hàng nào đặt mua đúng một lần
-select mathang.mahang, mathang.tenhang
+select mathang.mahang, mathang.tenhang, dondathang.ngaydathang
 from(mathang inner join chitietdathang on mathang.mahang = chitietdathang.mahang)
 		inner join dondathang on chitietdathang.sohoadon = dondathang.sohoadon
 where year(ngaydathang) = 2022
@@ -188,10 +188,29 @@ group by mathang.mahang, mathang.tenhang
 having count(chitietdathang.mahang) = 1;
 
 -- 7.	Xoá khỏi bảng KHACHHANG những khách hàng hiện không có bất kỳ đơn đặt hàng nào cho công ty
-delete from khachhang where not exists(select sohoadon from dondathang 
+select * from khachhang where not exists(select sohoadon from dondathang 
 where dondathang.makhachhang = khachhang.makhachhang);
 
 -- 8.	Nhân viên nào của công ty bán được số lượng hàng nhiều nhất và số lượng hàng bán được của những nhân viên này là bao nhiêu
+-- Cách 1 :
+select nhanvien.manhanvien,ho,ten,sum(soluong) as ' Số Lượng Hàng Bán Được '
+from(nhanvien inner join dondathang on nhanvien.manhanvien = dondathang.manhanvien)
+inner join chitietdathang on dondathang.sohoadon = chitietdathang.sohoadon
+group by nhanvien.manhanvien,ho,ten
+having sum(soluong) >= all(select sum(soluong)
+from (nhanvien inner join dondathang on nhanvien.manhanvien = dondathang.manhanvien)
+inner join chitietdathang on dondathang.sohoadon = chitietdathang.sohoadon
+group by nhanvien.manhanvien,ho,ten);
+
+-- Cách 2
+select nv.manhanvien,ho,ten,sum(ctdh.soluong) as 'Số Lượng Bán Được'
+from nhanvien nv, dondathang ddh, chitietdathang ctdh
+where nv.manhanvien = ddh.manhanvien and ddh.sohoadon = ctdh.sohoadon
+group by nv.manhanvien,ho,ten
+having sum(soluong) >= all(select sum(soluong)
+from nhanvien nv, dondathang ddh, chitietdathang ctdh
+where nv.manhanvien = ddh.manhanvien and ddh.sohoadon = ctdh.sohoadon
+group by nv.manhanvien,ho,ten);
 
 -- 9.	Tăng phụ cấp lên bằng 50% lương cho những nhân viên bán được hàng nhiều nhất
 update nhanvien set nhanvien.phucap = (luongcoban+phucap)/2 
@@ -203,3 +222,25 @@ having sum(soluong) >= all
 from dondathang , chitietdathang
 where dondathang.sohoadon = chitietdathang.sohoadon
 group by manhanvien));
+
+-- Thông kê trong năm 2006 mỗi một mặt hàng trong mỗi tháng và trong cả năm bán được với số lượng bao nhiêu
+-- (Yêu cầu kết quả hiểu thị dưới dạng bảng, hai cột đầu là mã hàng, tên hàng, các cột còn lại tương ứng từ tháng 1 
+--  đến tháng 12 và cả năm. Như vậy mỗi dòng trong kết quả cho biết số lượng hàng bán được mỗi tháng và trong cả năm của mỗi mặt hàng
+select ctdh.mahang,tenhang,
+sum(case month(ngaydathang) when 1 then ctdh.soluong else 0 end) as t1,
+sum(case month(ngaydathang) when 2 then ctdh.soluong else 0 end) as t2,
+sum(case month(ngaydathang) when 3 then ctdh.soluong else 0 end) as t3,
+sum(case month(ngaydathang) when 4 then ctdh.soluong else 0 end) as t4,
+sum(case month(ngaydathang) when 5 then ctdh.soluong else 0 end) as t5,
+sum(case month(ngaydathang) when 6 then ctdh.soluong else 0 end) as t6,
+sum(case month(ngaydathang) when 7 then ctdh.soluong else 0 end) as t7,
+sum(case month(ngaydathang) when 8 then ctdh.soluong else 0 end) as t8,
+sum(case month(ngaydathang) when 9 then ctdh.soluong else 0 end) as t9,
+sum(case month(ngaydathang) when 10 then ctdh.soluong else 0 end) as t10,
+sum(case month(ngaydathang) when 11 then ctdh.soluong else 0 end) as t11,
+sum(case month(ngaydathang) when 12 then ctdh.soluong else 0 end) as t12,
+sum(ctdh.soluong) as 'Cả Năm'
+from (dondathang ddh inner join chitietdathang ctdh on ddh.sohoadon = ctdh.sohoadon)
+inner join mathang mh on ctdh.mahang = mh.mahang
+where year(ngaydathang) = 2022
+group by ctdh.mahang,tenhang;

@@ -20,10 +20,10 @@ order by TenNhaCC asc, MaSoThue desc;
 -- Đếm số lần đăng ký cung cấp phương tiện tương ứng cho từng nhà cung cấp với
 -- yêu cầu chỉ đếm cho những nhà cung cấp thực hiện đăng ký cung cấp có ngày bắt đầu
 -- cung cấp là “20/11/2015”
-select MaNhaCC, count(MaDKCC) as SoLanDangKy
+select dangkycungcap.MaNhaCC, count(MaDKCC) as SoLanDangKy
 from dangkycungcap
-where NgayBatDauCungCap = '2015-11-20'
-group by MaNhaCC;
+where NgayBatDauCungCap = '2015/11/20'
+group by dangkycungcap.MaNhaCC;
 
 -- Liệt kê tên của toàn bộ các hãng xe có trong cơ sở dữ liệu với yêu cầu mỗi hãng xe chỉ được liệt kê một lần
 select distinct HangXe
@@ -33,9 +33,9 @@ from dongxe;
 -- HangXe, NgayBatDauCC, NgayKetThucCC của tất cả các lần đăng ký cung cấp phương
 -- tiện với yêu cầu những nhà cung cấp nào chưa từng thực hiện đăng ký cung cấp phương
 -- tiện thì cũng liệt kê thông tin những nhà cung cấp đó ra
-select DK.MaDKCC, NCC.MaNhaCC, NCC.TenNhaCC, NCC.DiaChi, NCC.MaSoThue, DV.TenLoaiDV
+select DK.MaDKCC, NCC.MaNhaCC, NCC.TenNhaCC, NCC.DiaChi, NCC.MaSoThue, DV.TenLoaiDV , DK.NgayBatDauCungCap, DK.NgayKetThucCungCap , dongxe.HangXe
 from nhacungcap NCC left join dangkycungcap DK on DK.MaNhaCC = NCC.MaNhaCC
-left join loaidichvu DV on DK.MaLoaiDV = DV.MaLoaiDV;
+left join loaidichvu DV on DK.MaLoaiDV = DV.MaLoaiDV left join dongxe on DK.DongXe = dongxe.DongXe;
 
 -- Liệt kê thông tin của các nhà cung cấp đã từng đăng ký cung cấp phương tiện
 -- thuộc dòng xe “Hiace” hoặc từng đăng ký cung cấp phương tiện thuộc dòng xe “Cerato”
